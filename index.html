@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Wallpaper Gallery</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      h1 {
+        text-align: center;
+        color: #2c3e50;
+      }
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+        padding: 20px 0;
+      }
+      .gallery-item {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+      }
+      .gallery-item:hover {
+        transform: translateY(-5px);
+      }
+      .gallery-item img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        display: block;
+      }
+      .gallery-item .info {
+        padding: 15px;
+      }
+      .gallery-item h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+      .gallery-item button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      .gallery-item button:hover {
+        background-color: #2980b9;
+      }
+      .gallery-item.loading {
+        opacity: 0.5;
+      }
+      #load-more {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #2ecc71;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      #load-more:hover {
+        background-color: #27ae60;
+      }
+      .loading-indicator {
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+        color: #7f8c8d;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Wallpaper Gallery</h1>
+      <div
+        id="gallery"
+        class="gallery"
+      ></div>
+      <div
+        id="loading"
+        class="loading-indicator"
+        style="display: none"
+      >
+        Loading...
+      </div>
+      <button id="load-more">Load More</button>
+    </div>
+
+    <script>
+      const gallery = document.getElementById("gallery");
+      const loadMoreButton = document.getElementById("load-more");
+      const loadingIndicator = document.getElementById("loading");
+      const dataUrl = "panels.json"; // Replace with your actual data path
+      let page = 1;
+      const imagesPerPage = 12;
+      let allImages = [];
+
+      function fetchImages() {
+        loadingIndicator.style.display = "block";
+        loadMoreButton.style.display = "none";
+
+        fetch(dataUrl)
+          .then((response) => response.json())
+          .then((data) => {
+            allImages = Object.values(data.data);
+            loadImages();
+          })
+          .catch((error) => console.error("Error fetching data:", error))
+          .finally(() => {
+            loadingIndicator.style.display = "none";
+            loadMoreButton.style.display = "block";
+          });
+      }
+
+      function loadImages() {
+        const startIndex = (page - 1) * imagesPerPage;
+        const endIndex = startIndex + imagesPerPage;
+        const imagesToLoad = allImages.slice(startIndex, endIndex);
+
+        imagesToLoad.forEach((image, index) => {
+          const imageItem = document.createElement("div");
+          imageItem.classList.add("gallery-item", "loading");
+
+          const imageElement = document.createElement("img");
+          imageElement.dataset.src = image.dhd;
+          imageElement.alt = `Wallpaper ${startIndex + index + 1}`;
+
+          const infoDiv = document.createElement("div");
+          infoDiv.classList.add("info");
+
+          const title = document.createElement("h3");
+          title.textContent = `Wallpaper ${startIndex + index + 1}`;
+
+          const downloadButton = document.createElement("button");
+          downloadButton.textContent = "Download";
+          downloadButton.addEventListener("click", () => {
+            window.open(image.dhd, "_blank");
+          });
+
+          infoDiv.appendChild(title);
+          infoDiv.appendChild(downloadButton);
+
+          imageItem.appendChild(imageElement);
+          imageItem.appendChild(infoDiv);
+          gallery.appendChild(imageItem);
+
+          const observer = new IntersectionObserver(
+            (entries) => {
+              if (entries[0].isIntersecting) {
+                imageElement.src = imageElement.dataset.src;
+                imageItem.classList.remove("loading");
+                observer.unobserve(imageElement);
+              }
+            },
+            { threshold: 0.1 }
+          );
+
+          observer.observe(imageElement);
+        });
+
+        if (endIndex >= allImages.length) {
+          loadMoreButton.style.display = "none";
+        }
+      }
+
+      loadMoreButton.addEventListener("click", () => {
+        page++;
+        loadImages();
+      });
+
+      fetchImages();
+    </script>
+  </body>
+</html>
